@@ -1,8 +1,10 @@
 package cosc455.project1
 
+import scala.collection.mutable.ListBuffer
+
 class MyLexicalAnalyzer extends LexicalAnalyzer {
   private var sourceLine : String = ""
-  private var lexeme : List[Char] = List()
+  private var lexeme = new ListBuffer[Char]()
   private var nextChar : Char = '\u0000'
   private var lexLength : Int = 0
   private var position : Int = 0
@@ -14,6 +16,7 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
     initializeLexems()
     sourceLine = line
     position = 0
+    getChar()
     getNextToken()
   }
 
@@ -24,7 +27,6 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
       position += 1
       return nextChar
     }
-    else nextChar = '\n'.charValue()
     return nextChar
   }
 
@@ -44,10 +46,11 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
     }
 
     // convert char list into string
-    var newToken : String = (lexeme.reverse).mkString
+    var newToken : String = lexeme.mkString
     // set CurrentToken = newToken
     Compiler.currentToken = newToken
-    // clear the lexeme list ?
+    // clear the lexeme list ? ... yeah i think u gotta...
+    lexeme.clear()
 
     /*/-- do we need this?
     if(lookup(newToken))
@@ -57,7 +60,7 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
   // adds current character to the token
   override def addChar(): Unit = {
     if(lexLength <= 98) {
-      lexeme ::= nextChar
+      lexeme += nextChar
       lexLength += 1
     }
     else {

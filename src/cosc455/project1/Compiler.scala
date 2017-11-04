@@ -22,6 +22,14 @@ object Compiler {
     Scanner.getNextToken()
     println(currentToken)
 
+    Scanner.getNextToken()
+    println(currentToken)
+
+    Scanner.getNextToken()
+    println(currentToken)
+
+
+
 
     /* old
     for (line <- scala.io.Source.fromFile(filename).getLines()) {
