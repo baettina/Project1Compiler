@@ -12,7 +12,7 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
     if (Compiler.currentToken.equalsIgnoreCase(CONSTANTS.DOCB)){
       // add to parse tree / stack
       tstack.push(Compiler.currentToken)
-      //Compiler.Scanner.getNextToken()
+      Compiler.Scanner.getNextToken()
 
       if (Compiler.currentToken.equalsIgnoreCase(CONSTANTS.DEFB)){
         variableDefine()

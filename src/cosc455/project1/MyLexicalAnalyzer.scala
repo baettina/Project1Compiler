@@ -10,8 +10,14 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
   private var position : Int = 0
   private var lexems : List[String] = List()
   private val plaintext = (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9') ++ "," ++ "." ++ "\"" ++ ":" ++ "?" ++ "_" ++ "/").toSet
+  private val keyword = List('#', '+', '*', '=', '[', ']', '(', ')', '!')
   private val whitespace = List(' ', '\t', '\n', '\b','\f','\r')
 
+  /** start() is our initial call to our Lexical Analyzer
+    *
+    * It initializes the certain variables used throughout the program
+    * and gets the first character of our first token.
+    */
   def start(line: String) = {
     initializeLexems()
     sourceLine = line
@@ -20,6 +26,11 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
     getNextToken()
   }
 
+  /** getChar() retrieves the next character
+    *
+    * Checks to see if current position is still within the bounds of our input file
+    * then takes the charAt(position) and increments position
+    */
   // gets the next character
   override def getChar(): Char = {
     if (position < sourceLine.length()) {
@@ -30,60 +41,92 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
     return nextChar
   }
 
-  // looks at each char to get next token and sets it to the Compiler's currentToken
+  /** getNextToken() builds a token and sets it to Compiler.currentToken
+    *
+    * Initializes token length to 0 and looks at each char and appends it to a List, lexeme
+    * until a whitespace. This List is converted to a string which we verify using lookup().
+    * The contents of this List is cleared after.
+    */
   override def getNextToken(): Unit = {
     lexLength = 0
 
-    // add first char to token
+    // get first non blank char
     getNonBlank()
+
+    if (nextChar == '\\'){
+      getAnnotation()
+    }
+    else if (keyword.contains(nextChar)){
+      getSolo()
+    }
+    else if (plaintext.contains(nextChar)){
+      //process text until next keyword
+      while(nextChar != ' ' || !keyword.contains(nextChar)){
+        addChar()
+        getChar()
+      }
+    }
+    
+    // convert char list into string
+    var newToken : String = lexeme.mkString
+
+    // only uses look up for tokens that start with \
+    if (lexeme.head == '\\' && lookup(newToken))
+      Compiler.currentToken = newToken
+    else
+      Compiler.currentToken = newToken
+
+    // clear the lexeme list ? ... yeah i think u gotta...
+    lexeme.clear()
+  }
+
+  def getSolo(): Unit = {
+    // nextChar is # + * = [ ] ( ) !
+    addChar()
+    getNonBlank()
+  }
+
+  def getAnnotation(): Unit = {
+    // nextChar is \
     addChar()
     getChar()
 
-    // continue gathering characters for the token until empty space
-    while(!whitespace.contains(nextChar)) {
+    // continue until [
+    while(nextChar != '[' || nextChar != ' '){
       addChar()
       getChar()
     }
 
-    // convert char list into string
-    var newToken : String = lexeme.mkString
-    // set CurrentToken = newToken
-    Compiler.currentToken = newToken
-    // clear the lexeme list ? ... yeah i think u gotta...
-    lexeme.clear()
-
-    /*/-- do we need this?
-    if(lookup(newToken))
-      Compiler.currentToken = newToken*/
-  }
-
-  // adds current character to the token
-  override def addChar(): Unit = {
-    if(lexLength <= 98) {
-      lexeme += nextChar
-      lexLength += 1
-    }
-    else {
-      println("LEXICAL ERROR - The found lexeme is too long!")
-
-      if(!isSpace(nextChar))
-        while(!isSpace(nextChar))
-          getChar()
-
-      lexLength = 0
-      getNonBlank()
+    // add [ too
+    if (nextChar == '['){
       addChar()
+      getChar()
     }
   }
 
+  /** addChar() adds current char to the token we are building
+    *
+    * our current char is appended to the List the length of the token is incremented by 1
+    */
+  override def addChar(): Unit = {
+    lexeme += nextChar
+    lexLength += 1
+  }
+
+  /** lookup() check to see if found token is a valid token
+    *
+    *
+    */
   override def lookup(candidate: String): Boolean = {
     if(!lexems.contains(candidate)) {
       //Compiler.Parser().setError();
-      println("LEXICAL ERROR - '" + candidate + "' is not recognized.")
-      return false
-    }
-    else if (!isPlaintext(candidate)) {
-      println("LEXICAL ERROR - '" + candidate + "' contains characters that are not allowed.")
+      if (!isPlaintext(candidate)) {
+        println("LEXICAL ERROR - '" + candidate + "' contains characters that are not allowed.")
+      }
+      else {
+        println("LEXICAL ERROR - '" + candidate + "' is not recognized.")
+        return false
+      }
     }
     return true
   }
