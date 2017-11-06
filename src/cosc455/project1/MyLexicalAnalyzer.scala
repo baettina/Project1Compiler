@@ -66,7 +66,7 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
         getChar()
       }
     }
-    
+
     // convert char list into string
     var newToken : String = lexeme.mkString
 
