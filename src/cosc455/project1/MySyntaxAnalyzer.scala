@@ -112,10 +112,12 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       }
       else {
         println("Error: Paragraphs must end with the tag \"\\PARAE\"")
+        System.exit(1)
       }
     }
     else{
       println("Error: Paragraphs must begin with the tag \"\\PARAB\"")
+      System.exit(1)
     }
   }
 
@@ -145,7 +147,6 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       innertext()
     }
     if(CONSTANTS.validText.contains(Compiler.currentToken)) {
-      // push text to stack
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
       innertext()
@@ -154,20 +155,21 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
 
   override def heading(): Unit = {
     if(Compiler.currentToken.equals(CONSTANTS.HEADING)) {
-      // add to stack
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
 
       if(CONSTANTS.validText.contains(Compiler.currentToken)){
-        // push plaintext to stack until new line
-        while(CONSTANTS.validText.contains(Compiler.currentToken) && Compiler.currentToken != "\\n"){
-          tstack.push(Compiler.currentToken)
-          Compiler.Scanner.getNextToken()
-        }
+        tstack.push(Compiler.currentToken)
+        Compiler.Scanner.getNextToken()
       }
       else {
-        println("Error: Can't have an empty header.")
+        println("Error: Can't have an empty heading or header must not contain illegal characters.")
+        System.exit(1)
       }
+    }
+    else {
+      println("Error: Headings must start with '#'.")
+      System.exit(1)
     }
   }
 
@@ -206,22 +208,27 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
             }
             else {
               println("Error: Variable definition must end with ']'.")
+              System.exit(1)
             }
           }
           else{
             println("Error: Missing variable value or variable value must not contain illegal characters.")
+            System.exit(1)
           }
         }
         else {
           println("Error: Missing '=' sign.")
+          System.exit(1)
         }
       }
       else {
         println("Error: Missing variable name or variable name must not contain illegal characters.")
+        System.exit(1)
       }
     }
     else {
       println("Error: Variable definitions must begin with '['.")
+      System.exit(1)
     }
   }
 
@@ -242,14 +249,17 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
         }
         else {
           println("Error: Incorrect syntax for variable use. Must end with ]")
+          System.exit(1)
         }
       }
       else {
         println("Error: Missing variable name or variable name must not contain special characters.")
+        System.exit(1)
       }
     }
     else {
       println("Error: Variable use must start with \"\\\\USE[\"")
+      System.exit(1)
     }
   }
 
@@ -268,14 +278,17 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
         }
         else {
           println("Error: Bold must end with '*'.")
+          System.exit(1)
         }
       }
       else {
         println("Error: Bold text contains illegal characters.")
+        System.exit(1)
       }
     }
     else {
       println("Error: Bold must begin with with '*'.")
+      System.exit(1)
     }
   }
 
@@ -290,10 +303,12 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       }
       else {
         println("Error: List item contains illegal characters.")
+        System.exit(1)
       }
     }
     else {
       println("Error: List items must begin with '+'.")
+      System.exit(1)
     }
   }
 
@@ -324,26 +339,32 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
               }
               else {
                 println("Error: Link mush end with ']'")
+                System.exit(1)
               }
             }
             else {
               println("Error: Link url contains invalid characters.")
+              System.exit(1)
             }
           }
           else {
             println("Error: Link is missing a '('.")
+            System.exit(1)
           }
         }
         else {
           println("Error: Link is missing a ']'.")
+          System.exit(1)
         }
       }
       else {
         println("Error: Link title contains illegal characters.")
+        System.exit(1)
       }
     }
     else {
       println("Error: Links must begin with '['.")
+      System.exit(1)
     }
   }
 
@@ -352,10 +373,63 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
 
-      link()
+      if (Compiler.currentToken.equals(CONSTANTS.LINKB)) {
+        tstack.push(Compiler.currentToken)
+        Compiler.Scanner.getNextToken()
+
+        if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+          tstack.push(Compiler.currentToken)
+          Compiler.Scanner.getNextToken()
+
+          if(Compiler.currentToken.equals(CONSTANTS.BRACKETE)) {
+            tstack.push(Compiler.currentToken)
+            Compiler.Scanner.getNextToken()
+
+            if(Compiler.currentToken.equals(CONSTANTS.ADDRESSB)) {
+              tstack.push(Compiler.currentToken)
+              Compiler.Scanner.getNextToken()
+
+              if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+                tstack.push(Compiler.currentToken)
+                Compiler.Scanner.getNextToken()
+
+                if(Compiler.currentToken.equals(CONSTANTS.ADDRESSE)) {
+                  tstack.push(Compiler.currentToken)
+                  Compiler.Scanner.getNextToken()
+                }
+                else {
+                  println("Error: Images must end with ']'")
+                  System.exit(1)
+                }
+              }
+              else {
+                println("Error: Image url contains invalid characters.")
+                System.exit(1)
+              }
+            }
+            else {
+              println("Error: Image link is missing a '('.")
+              System.exit(1)
+            }
+          }
+          else {
+            println("Error: Image link is missing a ']'.")
+            System.exit(1)
+          }
+        }
+        else {
+          println("Error: Image link title contains illegal characters.")
+          System.exit(1)
+        }
+      }
+      else {
+        println("Error: Image link is missing a '['.")
+        System.exit(1)
+      }
     }
     else {
       println("Error: Images must begin with '!'.")
+      System.exit(1)
     }
   }
 
