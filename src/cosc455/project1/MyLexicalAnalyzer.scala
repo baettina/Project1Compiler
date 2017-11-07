@@ -61,11 +61,24 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
     }
     else if (plaintext.contains(nextChar)){
       //process text until next keyword
-      while(nextChar != ' ' || !keyword.contains(nextChar)){
+      // try this >> nextChar.isWhitespace
+      while(!isSpace(nextChar) || !keyword.contains(nextChar)){
         addChar()
         getChar()
       }
     }
+
+    /*this works but it doesnt catch link [ and ] and ( and )
+while(!whitespace.contains(nextChar) && nextChar != '['){
+addChar()
+getChar()
+}
+if (nextChar == '['){
+addChar()
+getChar()
+}*/
+
+
 
     // convert char list into string
     var newToken : String = lexeme.mkString
