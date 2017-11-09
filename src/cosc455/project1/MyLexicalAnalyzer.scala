@@ -10,8 +10,6 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
   private var position : Int = 0
   private var lexems : List[String] = List()
   private val plaintext = (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9') ++ "," ++ "." ++ "\"" ++ ":" ++ "?" ++ "_" ++ "/").toSet
-  private val keyword = List('#', '+', '*', '=', '[', ']', '(', ')', '!')
-  private val whitespace = List(' ', '\t', '\n', '\b','\f','\r')
 
   /** start() is our initial call to our Lexical Analyzer
     *
@@ -49,77 +47,79 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
     */
   override def getNextToken(): Unit = {
     lexLength = 0
+    //if(nextChar != sourceLine.charAt(position)) getChar()
 
-    // get first non blank char
-    getNonBlank()
+    if(nextChar.isWhitespace) {getNonBlank()}
 
-    if (nextChar == '\\'){
-      getAnnotation()
+    if(CONSTANTS.symbols.contains(nextChar)) {
+      if(nextChar == '\\') {procAnno()}
+      else if(nextChar == '!') {procLink()}
+      else {procSym()}
+
+      // convert char list into string
+      var newToken : String = lexeme.mkString
+
+      if(lookup(newToken)) {
+        Compiler.currentToken = newToken
+      }
     }
-    else if (keyword.contains(nextChar)){
-      getSolo()
+    else if(!nextChar.isWhitespace) {
+      procText()
+      Compiler.currentToken = lexeme.mkString
     }
-    else if (plaintext.contains(nextChar)){
-      //process text until next keyword
-      // try this >> nextChar.isWhitespace
-      while(!isSpace(nextChar) || !keyword.contains(nextChar)){
+    else {
+      println("Error: Can't get next token")
+    }
+
+    lexeme.clear()
+  }
+
+
+  def procSym(): Unit = {
+    addChar()
+    getChar()
+  }
+
+  def procText(): Unit = {
+    while(!CONSTANTS.symbols.contains(nextChar))  {
+      addChar()
+      getChar()
+    }
+  }
+
+  def procAnno(): Unit = {
+    if(nextChar == '\\'){
+      addChar()
+      getChar()
+
+      while(!nextChar.isWhitespace && nextChar != '[') {
+        addChar()
+        getChar()
+      }
+
+      if(nextChar == '[') {
         addChar()
         getChar()
       }
     }
-
-    /*this works but it doesnt catch link [ and ] and ( and )
-while(!whitespace.contains(nextChar) && nextChar != '['){
-addChar()
-getChar()
-}
-if (nextChar == '['){
-addChar()
-getChar()
-}*/
-
-
-
-    // convert char list into string
-    var newToken : String = lexeme.mkString
-
-    // only uses look up for tokens that start with \
-    if (lexeme.head == '\\' && lookup(newToken))
-      Compiler.currentToken = newToken
-    else
-      Compiler.currentToken = newToken
-
-    // clear the lexeme list ? ... yeah i think u gotta...
-    lexeme.clear()
   }
 
-  def getSolo(): Unit = {
-    // nextChar is # + * = [ ] ( ) !
-    addChar()
-    getNonBlank()
-  }
-
-  def getAnnotation(): Unit = {
-    // nextChar is \
-    addChar()
-    getChar()
-
-    // continue until [
-    while(nextChar != '[' || nextChar != ' '){
+  def procLink(): Unit = {
+    if(nextChar == '!') {
       addChar()
       getChar()
-    }
 
-    // add [ too
-    if (nextChar == '['){
-      addChar()
-      getChar()
+      if(nextChar == '[') {
+        addChar()
+        getChar()
+      }
     }
   }
 
   /** addChar() adds current char to the token we are building
     *
-    * our current char is appended to the List the length of the token is incremented by 1
+    * The current char is appended to the List,
+    * the length of the token is incremented by 1
     */
   override def addChar(): Unit = {
     lexeme += nextChar
@@ -128,16 +128,19 @@ getChar()
 
   /** lookup() check to see if found token is a valid token
     *
-    *
+    * First, it checks if the annotation or symbol is recognized.
+    * If not, it checks if contains illegal characters
+    * else, it declares that the candidate is an illegal annotation
     */
   override def lookup(candidate: String): Boolean = {
     if(!lexems.contains(candidate)) {
       //Compiler.Parser().setError();
       if (!isPlaintext(candidate)) {
         println("LEXICAL ERROR - '" + candidate + "' contains characters that are not allowed.")
+        return false
       }
       else {
-        println("LEXICAL ERROR - '" + candidate + "' is not recognized.")
+        println("LEXICAL ERROR - '" + candidate + "' is an illegal annotation.")
         return false
       }
     }
@@ -149,9 +152,7 @@ getChar()
       "[", "(", ")", "![", "\\DEF[", "=", "\\USE[")
   }
 
-  def isSpace(c : Char): Boolean = whitespace.contains(c)
-
-  def getNonBlank(): Unit = while(isSpace(nextChar)) getChar()
+  def getNonBlank(): Unit = while(nextChar.isWhitespace) getChar()
 
   def isPlaintext(candidate: String) = candidate.forall(plaintext.contains(_))
 

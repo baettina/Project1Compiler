@@ -23,6 +23,7 @@ object Compiler {
       println(currentToken)
     }
 
+
     /* old
     for (line <- scala.io.Source.fromFile(filename).getLines()) {
       // parse sentence against gittex grammar

@@ -10,6 +10,11 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
   var variables = Map[String, String]()
   var variableNames = new ListBuffer[String]()
 
+  /** addChar() adds current char to the token we are building
+    *
+    * The current char is appended to the List,
+    * the length of the token is incremented by 1
+    */
   override def gittex(): Unit = {
     if (Compiler.currentToken.equalsIgnoreCase(CONSTANTS.DOCB)){
       tstack.push(Compiler.currentToken)
@@ -373,62 +378,53 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
 
-      if (Compiler.currentToken.equals(CONSTANTS.LINKB)) {
+      if(CONSTANTS.validText.contains(Compiler.currentToken)) {
         tstack.push(Compiler.currentToken)
         Compiler.Scanner.getNextToken()
 
-        if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+        if(Compiler.currentToken.equals(CONSTANTS.BRACKETE)) {
           tstack.push(Compiler.currentToken)
           Compiler.Scanner.getNextToken()
 
-          if(Compiler.currentToken.equals(CONSTANTS.BRACKETE)) {
+          if(Compiler.currentToken.equals(CONSTANTS.ADDRESSB)) {
             tstack.push(Compiler.currentToken)
             Compiler.Scanner.getNextToken()
 
-            if(Compiler.currentToken.equals(CONSTANTS.ADDRESSB)) {
+            if(CONSTANTS.validText.contains(Compiler.currentToken)) {
               tstack.push(Compiler.currentToken)
               Compiler.Scanner.getNextToken()
 
-              if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+              if(Compiler.currentToken.equals(CONSTANTS.ADDRESSE)) {
                 tstack.push(Compiler.currentToken)
                 Compiler.Scanner.getNextToken()
-
-                if(Compiler.currentToken.equals(CONSTANTS.ADDRESSE)) {
-                  tstack.push(Compiler.currentToken)
-                  Compiler.Scanner.getNextToken()
-                }
-                else {
-                  println("Error: Images must end with ']'")
-                  System.exit(1)
-                }
               }
               else {
-                println("Error: Image url contains invalid characters.")
+                println("Error: Images must end with ']'")
                 System.exit(1)
               }
             }
             else {
-              println("Error: Image link is missing a '('.")
+              println("Error: Image url contains invalid characters.")
               System.exit(1)
             }
           }
           else {
-            println("Error: Image link is missing a ']'.")
+            println("Error: Image link is missing a '('.")
             System.exit(1)
           }
         }
         else {
-          println("Error: Image link title contains illegal characters.")
+          println("Error: Image link is missing a ']'.")
           System.exit(1)
         }
       }
       else {
-        println("Error: Image link is missing a '['.")
+        println("Error: Image link title contains illegal characters.")
         System.exit(1)
       }
     }
     else {
-      println("Error: Images must begin with '!'.")
+      println("Error: Images must begin with '!['.")
       System.exit(1)
     }
   }
