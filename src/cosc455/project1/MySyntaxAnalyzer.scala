@@ -30,11 +30,15 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
 
         if (Compiler.currentToken.equalsIgnoreCase(CONSTANTS.DOCE)){
           tstack.push(Compiler.currentToken)
-          println("WOO HOO!! proper syntax")
-          // file has proper syntax
+          if(Compiler.Scanner.position + 2 < Compiler.fileContents.length)
+            println("Error: Everything must be within the document block")
+          else{
+            println("WOO HOO!! proper syntax")
+            Compiler.gittexTokens = tstack.toList
+          }
         }
         else {
-          println("Error: Missing \"\\DOCE\".  This is required at the end of every gittex.\n")
+          println("Error: Missing \"\\END\".  This is required at the end of every gittex.\n")
           System.exit(1)
         }
       }
@@ -44,7 +48,7 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       }
     }
     else {
-      println("Error: Missing \"\\DOCB\". This is required at the beginning of every gittex.")
+      println("Error: Missing \"\\BEGIN\". This is required at the beginning of every gittex.")
       System.exit(1)
     }
   }
@@ -54,11 +58,11 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
 
-      if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+      if(isValidText(Compiler.currentToken)) {
         tstack.push(Compiler.currentToken)
         Compiler.Scanner.getNextToken()
 
-        if(Compiler.currentToken.equals(CONSTANTS.BRACKETE)) {
+        if(Compiler.currentToken.equals(CONSTANTS.BRACKETE.toString)) {
           tstack.push(Compiler.currentToken)
           Compiler.Scanner.getNextToken()
         }
@@ -79,10 +83,10 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
   }
 
   override def body(): Unit = {
-    if(Compiler.currentToken.equals(CONSTANTS.USEB) || Compiler.currentToken.equals(CONSTANTS.HEADING) ||
-       Compiler.currentToken.equals(CONSTANTS.BOLD) || Compiler.currentToken.equals(CONSTANTS.LISTITEM) ||
-       Compiler.currentToken.equals(CONSTANTS.IMAGEB) || Compiler.currentToken.equals(CONSTANTS.LINKB) ||
-       CONSTANTS.validText.contains(Compiler.currentToken)) {
+    if(Compiler.currentToken.equals(CONSTANTS.USEB) || Compiler.currentToken.equals(CONSTANTS.HEADING.toString) ||
+       Compiler.currentToken.equals(CONSTANTS.BOLD.toString) || Compiler.currentToken.equals(CONSTANTS.LISTITEM.toString) ||
+       Compiler.currentToken.equals(CONSTANTS.IMAGEB.toString) || Compiler.currentToken.equals(CONSTANTS.LINKB.toString) ||
+       isValidText(Compiler.currentToken)) {
       innertext()
       body()
     }
@@ -92,7 +96,7 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       body()
     }
 
-    if(Compiler.currentToken.equals(CONSTANTS.NEWLINE)) {
+    if(Compiler.currentToken.equals(CONSTANTS.NEWLINE.toString)) {
       newline()
       body()
     }
@@ -131,15 +135,15 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       variableUse()
       innertext()
     }
-    if(Compiler.currentToken.equals(CONSTANTS.HEADING)) {
+    if(Compiler.currentToken.equals(CONSTANTS.HEADING.toString)) {
       heading()
       innertext()
     }
-    if(Compiler.currentToken.equals(CONSTANTS.BOLD)) {
+    if(Compiler.currentToken.equals(CONSTANTS.BOLD.toString)) {
       bold()
       innertext()
     }
-    if(Compiler.currentToken.equals(CONSTANTS.LISTITEM)) {
+    if(Compiler.currentToken.equals(CONSTANTS.LISTITEM.toString)) {
       listItem()
       innertext()
     }
@@ -147,11 +151,15 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       image()
       innertext()
     }
-    if(Compiler.currentToken.equals(CONSTANTS.LINKB)) {
+    if(Compiler.currentToken.equals(CONSTANTS.LINKB.toString)) {
       link()
       innertext()
     }
-    if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+    if(Compiler.currentToken.equalsIgnoreCase(CONSTANTS.PARAE) && !tstack.toList.contains(CONSTANTS.PARAB)){
+      println("Syntax error: Closing tag \"\\PARAE\" was called without the opening tag \"\\PARAB\"")
+      System.exit(1)
+    }
+    if(isValidText(Compiler.currentToken)) {
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
       innertext()
@@ -159,11 +167,11 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
   }
 
   override def heading(): Unit = {
-    if(Compiler.currentToken.equals(CONSTANTS.HEADING)) {
+    if(Compiler.currentToken.equals(CONSTANTS.HEADING.toString)) {
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
 
-      if(CONSTANTS.validText.contains(Compiler.currentToken)){
+      if(isValidText(Compiler.currentToken)){
         tstack.push(Compiler.currentToken)
         Compiler.Scanner.getNextToken()
       }
@@ -182,28 +190,28 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
     var varName: String = ""
     var varVal: String = ""
 
-    if (Compiler.currentToken.equalsIgnoreCase(CONSTANTS.USEB)) {
+    if (Compiler.currentToken.equalsIgnoreCase(CONSTANTS.DEFB)) {
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
 
       // check for REQTEXT
-      if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+      if(isValidText(Compiler.currentToken)) {
         // the token should be variable name
         tstack.push(Compiler.currentToken)
         varName = Compiler.currentToken
         Compiler.Scanner.getNextToken()
 
         // push the = sign
-        if(Compiler.currentToken.equals(CONSTANTS.EQSIGN)) {
+        if(Compiler.currentToken.equals(CONSTANTS.EQSIGN.toString)) {
           tstack.push(Compiler.currentToken)
           Compiler.Scanner.getNextToken()
 
-          if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+          if(isValidText(Compiler.currentToken)) {
             tstack.push(Compiler.currentToken)
             varVal = Compiler.currentToken
             Compiler.Scanner.getNextToken()
 
-            if(Compiler.currentToken.equals(CONSTANTS.BRACKETE)) {
+            if(Compiler.currentToken.equals(CONSTANTS.BRACKETE.toString)) {
               tstack.push(Compiler.currentToken)
               Compiler.Scanner.getNextToken()
               // syntax is correct, add information to the map of variables
@@ -231,10 +239,6 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
         System.exit(1)
       }
     }
-    else {
-      println("Error: Variable definitions must begin with '['.")
-      System.exit(1)
-    }
   }
 
   override def variableUse(): Unit = {
@@ -243,11 +247,11 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       Compiler.Scanner.getNextToken()
 
       // next token should be the variable name - check this in the semantic analyzer
-      if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+      if(isValidText(Compiler.currentToken)) {
         tstack.push(Compiler.currentToken)
         Compiler.Scanner.getNextToken()
 
-        if(Compiler.currentToken.equals(CONSTANTS.BRACKETE)) {
+        if(Compiler.currentToken.equals(CONSTANTS.BRACKETE.toString)) {
           // add ] to stack
           tstack.push(Compiler.currentToken)
           Compiler.Scanner.getNextToken()
@@ -269,15 +273,15 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
   }
 
   override def bold(): Unit = {
-    if(Compiler.currentToken.equals(CONSTANTS.BOLD)) {
+    if(Compiler.currentToken.equals(CONSTANTS.BOLD.toString)) {
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
 
-      if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+      if(isValidText(Compiler.currentToken)) {
         tstack.push(Compiler.currentToken)
         Compiler.Scanner.getNextToken()
 
-        if(Compiler.currentToken.equals(CONSTANTS.BOLD)) {
+        if(Compiler.currentToken.equals(CONSTANTS.BOLD.toString)) {
           tstack.push(Compiler.currentToken)
           Compiler.Scanner.getNextToken()
         }
@@ -298,47 +302,57 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
   }
 
   override def listItem(): Unit = {
-    if (Compiler.currentToken.equals(CONSTANTS.LISTITEM)) {
+    if (Compiler.currentToken.equals(CONSTANTS.LISTITEM.toString)) {
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
 
-      if (CONSTANTS.validText.contains(Compiler.currentToken)) {
-        tstack.push(Compiler.currentToken)
-        Compiler.Scanner.getNextToken()
-      }
-      else {
-        println("Error: List item contains illegal characters.")
-        System.exit(1)
-      }
+      inneritem()
+      listItem()
     }
-    else {
-      println("Error: List items must begin with '+'.")
-      System.exit(1)
+  }
+
+  def inneritem(): Unit = {
+    if(Compiler.currentToken.equals(CONSTANTS.USEB)) {
+      variableUse()
+      inneritem()
+    }
+    if(Compiler.currentToken.equals(CONSTANTS.BOLD.toString)) {
+      bold()
+      inneritem()
+    }
+    if(Compiler.currentToken.equals(CONSTANTS.LINKB.toString)) {
+      link()
+      inneritem()
+    }
+    if(isValidText(Compiler.currentToken)) {
+      tstack.push(Compiler.currentToken)
+      Compiler.Scanner.getNextToken()
+      inneritem()
     }
   }
 
   override def link(): Unit = {
-    if (Compiler.currentToken.equals(CONSTANTS.LINKB)) {
+    if (Compiler.currentToken.equals(CONSTANTS.LINKB.toString)) {
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
 
-      if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+      if(isValidText(Compiler.currentToken)) {
         tstack.push(Compiler.currentToken)
         Compiler.Scanner.getNextToken()
 
-        if(Compiler.currentToken.equals(CONSTANTS.BRACKETE)) {
+        if(Compiler.currentToken.equals(CONSTANTS.BRACKETE.toString)) {
           tstack.push(Compiler.currentToken)
           Compiler.Scanner.getNextToken()
 
-          if(Compiler.currentToken.equals(CONSTANTS.ADDRESSB)) {
+          if(Compiler.currentToken.equals(CONSTANTS.ADDRESSB.toString)) {
             tstack.push(Compiler.currentToken)
             Compiler.Scanner.getNextToken()
 
-            if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+            if(isValidText(Compiler.currentToken)) {
               tstack.push(Compiler.currentToken)
               Compiler.Scanner.getNextToken()
 
-              if(Compiler.currentToken.equals(CONSTANTS.ADDRESSE)) {
+              if(Compiler.currentToken.equals(CONSTANTS.ADDRESSE.toString)) {
                 tstack.push(Compiler.currentToken)
                 Compiler.Scanner.getNextToken()
               }
@@ -378,23 +392,23 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
 
-      if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+      if(isValidText(Compiler.currentToken)) {
         tstack.push(Compiler.currentToken)
         Compiler.Scanner.getNextToken()
 
-        if(Compiler.currentToken.equals(CONSTANTS.BRACKETE)) {
+        if(Compiler.currentToken.equals(CONSTANTS.BRACKETE.toString)) {
           tstack.push(Compiler.currentToken)
           Compiler.Scanner.getNextToken()
 
-          if(Compiler.currentToken.equals(CONSTANTS.ADDRESSB)) {
+          if(Compiler.currentToken.equals(CONSTANTS.ADDRESSB.toString)) {
             tstack.push(Compiler.currentToken)
             Compiler.Scanner.getNextToken()
 
-            if(CONSTANTS.validText.contains(Compiler.currentToken)) {
+            if(isValidText(Compiler.currentToken)) {
               tstack.push(Compiler.currentToken)
               Compiler.Scanner.getNextToken()
 
-              if(Compiler.currentToken.equals(CONSTANTS.ADDRESSE)) {
+              if(Compiler.currentToken.equals(CONSTANTS.ADDRESSE.toString)) {
                 tstack.push(Compiler.currentToken)
                 Compiler.Scanner.getNextToken()
               }
@@ -430,9 +444,13 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
   }
 
   override def newline(): Unit = {
-    if(Compiler.currentToken.equals(CONSTANTS.NEWLINE)){
+    if(Compiler.currentToken.equals(CONSTANTS.NEWLINE.toString)){
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
     }
+  }
+
+  def isValidText(candidate: String): Boolean = {
+    candidate.toList.forall(x => CONSTANTS.validText.contains(x))
   }
 }

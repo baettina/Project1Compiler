@@ -4,9 +4,11 @@ object Compiler {
 
   var currentToken: String = ""
   var fileContents: String = ""
+  var gittexTokens = List[String]()
 
-  val Scanner = new MyLexicalAnalyzer
-  //val Parser = new MySyntaxAnalyzer
+  val Scanner    = new MyLexicalAnalyzer
+  val Parser     = new MySyntaxAnalyzer
+  val Translator = new MySemanticAnalyzer
 
   def main(args:Array[String]) = {
 
@@ -16,26 +18,10 @@ object Compiler {
 
     // get the first token
     Scanner.start(fileContents)
-    println(currentToken)
-
-    while(currentToken != Nil){
-      Scanner.getNextToken()
-      println(currentToken)
-    }
+    Parser.gittex()
+    Translator.start(gittexTokens.reverse)
 
 
-    /* old
-    for (line <- scala.io.Source.fromFile(filename).getLines()) {
-      // parse sentence against gittex grammar
-      Parser.Gittex()
-
-      // check for syntax errors
-      if (Parser.getError)
-        println("The sentence '" + line + "' does not follow the BNF grammar.")
-      else
-        println("The sentence '" + line + "' follows the BNF grammar.")
-    }
-    */
   }
   def readFile(file : String) = {
     val source = scala.io.Source.fromFile(file)

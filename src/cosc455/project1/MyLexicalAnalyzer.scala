@@ -3,11 +3,11 @@ package cosc455.project1
 import scala.collection.mutable.ListBuffer
 
 class MyLexicalAnalyzer extends LexicalAnalyzer {
-  private var sourceLine : String = ""
+  var sourceLine : String = ""
+  var position : Int = 0
   private var lexeme = new ListBuffer[Char]()
   private var nextChar : Char = '\u0000'
   private var lexLength : Int = 0
-  private var position : Int = 0
   private var lexems : List[String] = List()
   private val plaintext = (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9') ++ "," ++ "." ++ "\"" ++ ":" ++ "?" ++ "_" ++ "/").toSet
 
@@ -47,13 +47,12 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
     */
   override def getNextToken(): Unit = {
     lexLength = 0
-    //if(nextChar != sourceLine.charAt(position)) getChar()
 
     if(nextChar.isWhitespace) {getNonBlank()}
 
     if(CONSTANTS.symbols.contains(nextChar)) {
       if(nextChar == '\\') {procAnno()}
-      else if(nextChar == '!') {procLink()}
+      else if(nextChar == '!') {procImg()}
       else {procSym()}
 
       // convert char list into string
@@ -70,7 +69,6 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
     else {
       println("Error: Can't get next token")
     }
-
     lexeme.clear()
   }
 
@@ -104,7 +102,7 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
     }
   }
 
-  def procLink(): Unit = {
+  def procImg(): Unit = {
     if(nextChar == '!') {
       addChar()
       getChar()
@@ -134,22 +132,16 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
     */
   override def lookup(candidate: String): Boolean = {
     if(!lexems.contains(candidate)) {
-      //Compiler.Parser().setError();
-      if (!isPlaintext(candidate)) {
-        println("LEXICAL ERROR - '" + candidate + "' contains characters that are not allowed.")
-        return false
-      }
-      else {
-        println("LEXICAL ERROR - '" + candidate + "' is an illegal annotation.")
-        return false
-      }
+      println("LEXICAL ERROR - '" + candidate + "' is an illegal annotation.")
+      System.exit(1)
+      return false
     }
     return true
   }
 
   def initializeLexems() = {
-    lexems = List("\\BEGIN", "\\END", "\\TITLE[", "]", "#", "\\PARAB", "\\PARAE", "*", "+", "\\\\",
-      "[", "(", ")", "![", "\\DEF[", "=", "\\USE[")
+    lexems = List("\\BEGIN", "\\begin", "\\END", "\\end", "\\TITLE[", "\\title", "]", "#", "\\PARAB", "\\parab", "\\PARAE", "\\parae", "*", "+", "\\\\",
+                  "[", "(", ")", "![", "\\DEF[", "\\def[", "=", "\\USE[", "\\use[")
   }
 
   def getNonBlank(): Unit = while(nextChar.isWhitespace) getChar()
