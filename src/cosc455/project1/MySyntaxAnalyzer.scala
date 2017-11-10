@@ -1,14 +1,14 @@
 package cosc455.project1
 
 import scala.collection.mutable.Stack
-import scala.collection.mutable.Map
 import scala.collection.mutable.ListBuffer
 
 class MySyntaxAnalyzer extends SyntaxAnalyzer {
 
   var tstack = Stack[String]()
-  var variables = Map[String, String]()
+  //var variables = Map[String, ListBuffer[String]]()
   var variableNames = new ListBuffer[String]()
+  //var varnodes = Map.empty[String, List[String]]
 
   /** addChar() adds current char to the token we are building
     *
@@ -34,7 +34,7 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
             println("Error: Everything must be within the document block")
           else{
             println("WOO HOO!! proper syntax")
-            Compiler.gittexTokens = tstack.toList
+            Compiler.gittexTokens = tstack.toList.reverse
           }
         }
         else {
@@ -52,6 +52,7 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       System.exit(1)
     }
   }
+
 
   override def title(): Unit = {
     if(Compiler.currentToken.equalsIgnoreCase(CONSTANTS.TITLEB)){
@@ -187,9 +188,6 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
   }
 
   override def variableDefine(): Unit = {
-    var varName: String = ""
-    var varVal: String = ""
-
     if (Compiler.currentToken.equalsIgnoreCase(CONSTANTS.DEFB)) {
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
@@ -198,7 +196,6 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       if(isValidText(Compiler.currentToken)) {
         // the token should be variable name
         tstack.push(Compiler.currentToken)
-        varName = Compiler.currentToken
         Compiler.Scanner.getNextToken()
 
         // push the = sign
@@ -208,14 +205,11 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
 
           if(isValidText(Compiler.currentToken)) {
             tstack.push(Compiler.currentToken)
-            varVal = Compiler.currentToken
             Compiler.Scanner.getNextToken()
 
             if(Compiler.currentToken.equals(CONSTANTS.BRACKETE.toString)) {
               tstack.push(Compiler.currentToken)
               Compiler.Scanner.getNextToken()
-              // syntax is correct, add information to the map of variables
-              variables += (varName.toString -> varVal.toString)
 
               variableDefine()
             }
@@ -327,8 +321,9 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
     if(isValidText(Compiler.currentToken)) {
       tstack.push(Compiler.currentToken)
       Compiler.Scanner.getNextToken()
-      inneritem()
+      //inneritem()
     }
+
   }
 
   override def link(): Unit = {

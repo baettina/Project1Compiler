@@ -19,7 +19,7 @@ object Compiler {
     // get the first token
     Scanner.start(fileContents)
     Parser.gittex()
-    Translator.start(gittexTokens.reverse)
+    Translator.start()
 
 
   }

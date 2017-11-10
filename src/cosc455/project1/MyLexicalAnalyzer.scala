@@ -79,7 +79,7 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
   }
 
   def procText(): Unit = {
-    while(!CONSTANTS.symbols.contains(nextChar))  {
+    while(!CONSTANTS.symbols.contains(nextChar) && nextChar != '\n')  {
       addChar()
       getChar()
     }

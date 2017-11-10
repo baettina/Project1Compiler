@@ -1,215 +1,317 @@
 package cosc455.project1
 
-import scala.collection.mutable.{ListBuffer, Map, Queue}
+import scala.collection.mutable.{ListBuffer, Map}
 
 class MySemanticAnalyzer {
 
   // create the hashmap here maybe
-
+  var token: String = ""
+  var position: Int = 0
   var html = ListBuffer[String]()
-  var tokenlist  = List[String]()
-  var variables  = Queue[String]()
-  var vnames     = List[String]()
-  var gVar = Map[String,String]()
-  var pVar = Map[String,String]()
-  var position = 0
+  var gVars = Map[String, String]()
+  var pVars = Map[String, String]()
 
-  def start(gtokens: List[String]): Unit =  {
-    tokenlist = gtokens
-    //variables = Compiler.Parser.varnodes
-    //variables.keys
+  def getNextToken(): Unit = {
+    token = Compiler.gittexTokens(position)
+    position += 1
+  }
 
-    while(!tokenlist(position).equalsIgnoreCase(CONSTANTS.DOCE)){
-      convert()
-    }
-
-    if(tokenlist(position).equalsIgnoreCase(CONSTANTS.DOCE)) {
-      cEnd()
-    }
+  def start(): Unit = {
+    getNextToken()
+    gittex()
 
     for (elem <- html) {print(elem)}
   }
 
-  def convert(): Unit = {
-    if(tokenlist(position).equalsIgnoreCase(CONSTANTS.DOCB))         {cBeg()}
-    else if(tokenlist(position).equalsIgnoreCase(CONSTANTS.DEFB))    {cVdef()}
-    else if(tokenlist(position).equalsIgnoreCase(CONSTANTS.USEB))    {cVuse()}
-    else if(tokenlist(position).equalsIgnoreCase(CONSTANTS.TITLEB))  {cTitle()}
-    else if(tokenlist(position).equals(CONSTANTS.HEADING.toString))  {cHeading()}
-    else if(tokenlist(position).equalsIgnoreCase(CONSTANTS.PARAB))   {cPar()}
-    else if(tokenlist(position).equals(CONSTANTS.LINKB.toString))    {cLink()}
-    else if(tokenlist(position).equals(CONSTANTS.BOLD.toString))     {cBold()}
-    else if(tokenlist(position).equals(CONSTANTS.LISTITEM.toString)) {cList()}
-    else if(tokenlist(position).equals(CONSTANTS.IMAGEB))            {cImg()}
-    else if(tokenlist(position).equals(CONSTANTS.NEWLINE))           {cNl()}
-    else                                                             {text()}
-  }
+  def gittex(): Unit = {
+    if (token.equalsIgnoreCase(CONSTANTS.DOCB)) {
+      html += "<html>\n"
+      getNextToken()
 
-  def addNode(key: String, value: String) = {
-    vnames = key.toList.filter(!_.isWhitespace).mkString :: vnames
-    variables.enqueue(value)
+      if (token.equalsIgnoreCase(CONSTANTS.DEFB)) {
+        variableDefine()
+      }
 
-  }
+      if (token.equalsIgnoreCase(CONSTANTS.TITLEB)) {
+        title()
+        body()
 
-  def cVdef(): Unit = {
-    position += 1
-    var name = tokenlist(position)
-    position += 2
-    gVar + (name -> tokenlist(position))
-    position += 2
-  }
+        if (token.equalsIgnoreCase(CONSTANTS.DOCE)) {
+          html += "\n</html>"
 
-  def cVuse(): Unit = {
-    position += 1
-    val key: String = tokenlist(position)
-    if(gVar.contains(key)) {
-      // variable name found
-      html += gVar(key)
-    }
-    position += 2
-  }
-
-  def cBeg(): Unit = {
-    html += "<html>\n"
-    position += 1
-  }
-
-  def cEnd(): Unit = {
-    html += "\n</html>"
-  }
-
-  def cTitle(): Unit = {
-    html += "<title>"
-    position += 1
-    html += tokenlist(position)
-    position += 1
-    html += "</title>\n"
-    position += 1
-  }
-
-  def cHeading(): Unit = {
-    html += "<h1>"
-    position += 1
-    html += tokenlist(position).toList.filter(_ != '\n').mkString
-    position += 1
-    html += "</h1>\n"
-  }
-
-  def cPar(): Unit = {
-    html += "<p>"
-    position += 1
-    cPin()
-    html += "</p>\n"
-    position += 1
-  }
-
-  def cPin(): Unit = {
-    if(tokenlist(position).equalsIgnoreCase(CONSTANTS.DEFB))         {cPvdef()}
-    else if(tokenlist(position).equalsIgnoreCase(CONSTANTS.USEB))    {cPvuse()}
-    else if(tokenlist(position).equals(CONSTANTS.LINKB.toString))    {cLink()}
-    else if(tokenlist(position).equals(CONSTANTS.BOLD.toString))     {cBold()}
-    else if(tokenlist(position).equals(CONSTANTS.LISTITEM.toString)) {cList()}
-    else if(tokenlist(position).equals(CONSTANTS.IMAGEB))            {cImg()}
-    else                                                             {text()}
-
-    if(!tokenlist(position).equalsIgnoreCase(CONSTANTS.PARAE)) {
-      cPin()
+        }
+      }
     }
   }
 
-  def cPvdef(): Unit = {
-    position += 1
-    var name = tokenlist(position)
-    position += 2
-    pVar + (name -> tokenlist(position))
-    position += 2
-  }
+  def title(): Unit = {
+    if(token.equalsIgnoreCase(CONSTANTS.TITLEB)) {
+      html += "<title>"
+      getNextToken()
 
-  def cPvuse(): Unit = {
-    position += 1
-    val key: String = tokenlist(position)
-    if(pVar.contains(key)) {
-      // variable name found
-      html += pVar(key)
-    }
-    else if(gVar.contains(key)) {
-      html += gVar(key)
-    }
-    else {
-      println("Error: variable not defined")
-    }
-    position += 2
+      if (isValidText(token)) {
+        html += token
+        getNextToken()
 
-  }
-
-  def cPBeg(): Unit = {
-    html += "<p>"
-    position += 1
-  }
-
-  def cPEnd(): Unit = {
-    html += "</p>\n"
-    position += 1
-  }
-
-  def text(): Unit = {
-    html += tokenlist(position)
-    position += 1
-  }
-
-  def cLink(): Unit = {
-    position += 1 //[
-    var title = tokenlist(position)
-    position += 3 //title ] (
-    html += "<a href=\"" + tokenlist(position) + "\">" + title + "</a>"
-    position += 2
-  }
-
-  def cBold(): Unit = {
-    html += "<b>"
-    position += 1
-    html += tokenlist(position).toList.filter(_ != '\n').mkString
-    position += 1
-    html += "</b>"
-    position += 1
-  }
-
-  def cList(): Unit = {
-    html += "<li>"
-    position += 1
-    listText()
-    position += 1
-    html += "</li>\n"
-  }
-
-  def listText(): Unit = {
-    if(tokenlist(position).equalsIgnoreCase(CONSTANTS.USEB))         {cVuse()}
-    else if(tokenlist(position).equals(CONSTANTS.LINKB.toString))    {cLink()}
-    else if(tokenlist(position).equals(CONSTANTS.BOLD.toString))     {cBold()}
-    else {
-      html += tokenlist(position).toList.filter(_ != '\n').mkString
-      position += 1
-    }
-
-    if(!tokenlist(position).equals("\n")){
-      listText()
-    }
-    else {
-      position += 1
+        if (token.equals(CONSTANTS.BRACKETE.toString)) {
+          html += "</title>\n"
+          getNextToken()
+        }
+      }
     }
   }
 
-  def cImg(): Unit = {
-    position += 1
-    var title = tokenlist(position)
-    position += 3
-    html += "<img src=\"" + tokenlist(position) + "\" alt=\"" + title + "\">"
-    position += 2
+  def body(): Unit = {
+    if(token.equals(CONSTANTS.USEB) || token.equals(CONSTANTS.HEADING.toString) ||
+      token.equals(CONSTANTS.BOLD.toString) || token.equals(CONSTANTS.LISTITEM.toString) ||
+      token.equals(CONSTANTS.IMAGEB.toString) || token.equals(CONSTANTS.LINKB.toString) ||
+      isValidText(token)) {
+      innertext()
+      body()
+    }
+
+    if(token.equalsIgnoreCase(CONSTANTS.PARAB)) {
+      paragraph()
+      body()
+    }
+
+    if(token.equals(CONSTANTS.NEWLINE.toString)) {
+      newline()
+      body()
+    }
   }
 
-  def cNl(): Unit = {
-    html += "<br>\n"
-    position += 1
+  def innertext(): Unit = {
+    if(token.equals(CONSTANTS.USEB)) {
+      variableUse()
+      innertext()
+    }
+    if(token.equals(CONSTANTS.HEADING.toString)) {
+      heading()
+      innertext()
+    }
+    if(token.equals(CONSTANTS.BOLD.toString)) {
+      bold()
+      innertext()
+    }
+    if(token.equals(CONSTANTS.LISTITEM.toString)) {
+      listItem()
+      innertext()
+    }
+    if(token.equals(CONSTANTS.IMAGEB)) {
+      image()
+      innertext()
+    }
+    if(token.equals(CONSTANTS.LINKB.toString)) {
+      link()
+      innertext()
+    }
+    if(isValidText(token)) {
+      html += token
+      getNextToken()
+      innertext()
+    }
   }
 
+  def paragraph(): Unit = {
+    if(token.equalsIgnoreCase(CONSTANTS.PARAB)) {
+      html += "<p>\n"
+      getNextToken()
+
+      if(token.equals(CONSTANTS.DEFB)) {
+        variableDefine()
+      }
+
+      if(!token.equals(CONSTANTS.PARAE)) {
+        innertext()
+      }
+
+      if(token.equals(CONSTANTS.PARAE)) {
+        html += "\n</p>\n"
+        getNextToken()
+      }
+    }
+  }
+
+  def heading(): Unit = {
+    if(token.equals(CONSTANTS.HEADING.toString)) {
+      html += "<h1>"
+      getNextToken()
+
+      if(isValidText(token)){
+        html += token.toList.filter(_ != '\n').mkString
+        html += "</h1>\n"
+        getNextToken()
+      }
+    }
+  }
+
+  def variableDefine(): Unit = {
+    var varName: String = ""
+
+    if (token.equalsIgnoreCase(CONSTANTS.DEFB)) {
+      getNextToken()
+
+      // check for REQTEXT
+      if(isValidText(token)) {
+        // the token should be variable name
+        varName = token.toList.filter(!_.isWhitespace).mkString
+        getNextToken()
+
+        if(token.equals(CONSTANTS.EQSIGN.toString)) {
+          getNextToken()
+
+          if(isValidText(token)) {
+            gVars + (varName -> token)
+            getNextToken()
+
+            if(token.equals(CONSTANTS.BRACKETE.toString)) {
+              getNextToken()
+
+              variableDefine()
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def variableUse(): Unit = {
+    if(token.equalsIgnoreCase(CONSTANTS.USEB)) {
+      getNextToken()
+
+      // next token should be the variable name - check this in the semantic analyzer
+      if(isValidText(token)) {
+        if(gVars.contains(token.toList.filter(!_.isWhitespace).mkString)){
+          html += gVars(token)
+        }
+        getNextToken()
+
+        if(token.equals(CONSTANTS.BRACKETE.toString)) {
+          getNextToken()
+        }
+      }
+    }
+  }
+
+  def bold(): Unit = {
+    if(token.equals(CONSTANTS.BOLD.toString)) {
+      html += "<b>"
+      getNextToken()
+
+      if(isValidText(token)) {
+        html += token
+        getNextToken()
+
+        if(token.equals(CONSTANTS.BOLD.toString)) {
+          html += "</b>"
+          Compiler.Scanner.getNextToken()
+        }
+      }
+    }
+  }
+
+  def listItem(): Unit = {
+    if (token.equals(CONSTANTS.LISTITEM.toString)) {
+      html += "<li>"
+      getNextToken()
+
+      inneritem()
+      html += "</li>\n"
+
+      if(token.equals(CONSTANTS.LISTITEM))
+        listItem()
+    }
+  }
+
+  def inneritem(): Unit = {
+    if(token.equals(CONSTANTS.USEB)) {
+      variableUse()
+      inneritem()
+    }
+    if(token.equals(CONSTANTS.BOLD.toString)) {
+      bold()
+      inneritem()
+    }
+    if(token.equals(CONSTANTS.LINKB.toString)) {
+      link()
+      inneritem()
+    }
+    if(isValidText(token)) {
+      html += token.toList.filter(_ != '\n').mkString
+      getNextToken()
+      inneritem()
+    }
+
+  }
+
+  def link(): Unit = {
+    var lname: String = ""
+
+    if (token.equals(CONSTANTS.LINKB.toString)) {
+      getNextToken()
+
+      if(isValidText(token)) {
+        lname = token
+        getNextToken()
+
+        if(token.equals(CONSTANTS.BRACKETE.toString)) {
+          getNextToken()
+
+          if(token.equals(CONSTANTS.ADDRESSB.toString)) {
+            getNextToken()
+
+            if(isValidText(token)) {
+              html += "<a href=\"" + token + "\"> " + lname + " </a>"
+              getNextToken()
+
+              if(token.equals(CONSTANTS.ADDRESSE.toString)) {
+                getNextToken()
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def image(): Unit = {
+    var lname: String = ""
+    if(token.equals(CONSTANTS.IMAGEB)) {
+      getNextToken()
+
+      if(isValidText(token)) {
+        lname = token
+        getNextToken()
+
+        if(token.equals(CONSTANTS.BRACKETE.toString)) {
+          getNextToken()
+
+          if(token.equals(CONSTANTS.ADDRESSB.toString)) {
+            getNextToken()
+
+            if(isValidText(token)) {
+              html += "<img src =\"" + token + "\" alt=\"" + lname + "\">"
+              getNextToken()
+
+              if(token.equals(CONSTANTS.ADDRESSE.toString)) {
+                getNextToken()
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def newline(): Unit = {
+    if(token.equals(CONSTANTS.NEWLINE.toString)){
+      html += "<br>\n"
+      getNextToken()
+    }
+  }
+
+  def isValidText(candidate: String): Boolean = {
+    candidate.toList.forall(x => CONSTANTS.validText.contains(x))
+  }
 }
