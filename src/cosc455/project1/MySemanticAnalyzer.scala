@@ -1,5 +1,7 @@
 package cosc455.project1
 
+import java.io.{File, PrintWriter}
+
 import scala.collection.mutable.{ListBuffer, Map}
 
 class MySemanticAnalyzer {
@@ -10,22 +12,25 @@ class MySemanticAnalyzer {
   var html = ListBuffer[String]()
   var gVars = Map[String, String]()
   var pVars = Map[String, String]()
+  val htmlfile   = new PrintWriter(new File("index.html"))
 
   def getNextToken(): Unit = {
     token = Compiler.gittexTokens(position)
     position += 1
   }
 
-  def start(): Unit = {
+  def start(filename: String): Unit = {
     getNextToken()
     gittex()
 
-    for (elem <- html) {print(elem)}
+    html.foreach(x=>print(x))
+    htmlfile.close()
   }
 
   def gittex(): Unit = {
     if (token.equalsIgnoreCase(CONSTANTS.DOCB)) {
       html += "<html>\n"
+      htmlfile.write("<html>\n")
       getNextToken()
 
       if (token.equalsIgnoreCase(CONSTANTS.DEFB)) {
@@ -38,6 +43,7 @@ class MySemanticAnalyzer {
 
         if (token.equalsIgnoreCase(CONSTANTS.DOCE)) {
           html += "\n</html>"
+          htmlfile.write("\n</html>")
 
         }
       }
@@ -47,14 +53,17 @@ class MySemanticAnalyzer {
   def title(): Unit = {
     if(token.equalsIgnoreCase(CONSTANTS.TITLEB)) {
       html += "<title>"
+      htmlfile.write("<title>")
       getNextToken()
 
       if (isValidText(token)) {
         html += token
+        htmlfile.write(token)
         getNextToken()
 
         if (token.equals(CONSTANTS.BRACKETE.toString)) {
           html += "</title>\n"
+          htmlfile.write("</title>\n")
           getNextToken()
         }
       }
@@ -108,6 +117,7 @@ class MySemanticAnalyzer {
     }
     if(isValidText(token)) {
       html += token
+      htmlfile.write(token)
       getNextToken()
       innertext()
     }
@@ -116,6 +126,7 @@ class MySemanticAnalyzer {
   def paragraph(): Unit = {
     if(token.equalsIgnoreCase(CONSTANTS.PARAB)) {
       html += "<p>\n"
+      htmlfile.write("<p>\n")
       getNextToken()
 
       if(token.equals(CONSTANTS.DEFB)) {
@@ -128,6 +139,7 @@ class MySemanticAnalyzer {
 
       if(token.equals(CONSTANTS.PARAE)) {
         html += "\n</p>\n"
+        htmlfile.write("\n</p>\n")
         getNextToken()
       }
     }
@@ -136,11 +148,14 @@ class MySemanticAnalyzer {
   def heading(): Unit = {
     if(token.equals(CONSTANTS.HEADING.toString)) {
       html += "<h1>"
+      htmlfile.write("<h1>")
       getNextToken()
 
       if(isValidText(token)){
         html += token.toList.filter(_ != '\n').mkString
+        htmlfile.write(token.toList.filter(_ != '\n').mkString)
         html += "</h1>\n"
+        htmlfile.write("</h1>\n")
         getNextToken()
       }
     }
@@ -162,7 +177,7 @@ class MySemanticAnalyzer {
           getNextToken()
 
           if(isValidText(token)) {
-            gVars + (varName -> token)
+            gVars += (varName -> token)
             getNextToken()
 
             if(token.equals(CONSTANTS.BRACKETE.toString)) {
@@ -183,7 +198,12 @@ class MySemanticAnalyzer {
       // next token should be the variable name - check this in the semantic analyzer
       if(isValidText(token)) {
         if(gVars.contains(token.toList.filter(!_.isWhitespace).mkString)){
-          html += gVars(token)
+          html += gVars(token) + ' '
+          htmlfile.write(gVars(token) + ' ')
+        }
+        else {
+          println("Static semantic error: " + token + " has not been defined.")
+          System.exit(1)
         }
         getNextToken()
 
@@ -197,15 +217,18 @@ class MySemanticAnalyzer {
   def bold(): Unit = {
     if(token.equals(CONSTANTS.BOLD.toString)) {
       html += "<b>"
+      htmlfile.write("<b>")
       getNextToken()
 
       if(isValidText(token)) {
         html += token
+        htmlfile.write(token)
         getNextToken()
 
         if(token.equals(CONSTANTS.BOLD.toString)) {
           html += "</b>"
-          Compiler.Scanner.getNextToken()
+          htmlfile.write("</b>")
+          getNextToken()
         }
       }
     }
@@ -214,35 +237,41 @@ class MySemanticAnalyzer {
   def listItem(): Unit = {
     if (token.equals(CONSTANTS.LISTITEM.toString)) {
       html += "<li>"
+      htmlfile.write("<li>")
       getNextToken()
 
       inneritem()
       html += "</li>\n"
+      htmlfile.write("</li>\n")
 
-      if(token.equals(CONSTANTS.LISTITEM))
+      if(token.equals(CONSTANTS.LISTITEM.toString))
         listItem()
     }
   }
 
   def inneritem(): Unit = {
+    if(isValidText(token)) {
+      html += token.toList.filter(_ != '\n').mkString
+      htmlfile.write(token.toList.filter(_ != '\n').mkString)
+      getNextToken()
+    }
     if(token.equals(CONSTANTS.USEB)) {
       variableUse()
-      inneritem()
+      //inneritem()
     }
     if(token.equals(CONSTANTS.BOLD.toString)) {
       bold()
-      inneritem()
+      //inneritem()
     }
     if(token.equals(CONSTANTS.LINKB.toString)) {
       link()
-      inneritem()
-    }
-    if(isValidText(token)) {
-      html += token.toList.filter(_ != '\n').mkString
-      getNextToken()
-      inneritem()
+      //inneritem()
     }
 
+    if(!token.equals("\n"))
+      inneritem()
+    else
+      getNextToken()
   }
 
   def link(): Unit = {
@@ -263,6 +292,7 @@ class MySemanticAnalyzer {
 
             if(isValidText(token)) {
               html += "<a href=\"" + token + "\"> " + lname + " </a>"
+              htmlfile.write("<a href=\"" + token + "\"> " + lname + " </a>")
               getNextToken()
 
               if(token.equals(CONSTANTS.ADDRESSE.toString)) {
@@ -292,6 +322,7 @@ class MySemanticAnalyzer {
 
             if(isValidText(token)) {
               html += "<img src =\"" + token + "\" alt=\"" + lname + "\">"
+              htmlfile.write("<img src =\"" + token + "\" alt=\"" + lname + "\">")
               getNextToken()
 
               if(token.equals(CONSTANTS.ADDRESSE.toString)) {
@@ -307,6 +338,7 @@ class MySemanticAnalyzer {
   def newline(): Unit = {
     if(token.equals(CONSTANTS.NEWLINE.toString)){
       html += "<br>\n"
+      htmlfile.write("<br>\n")
       getNextToken()
     }
   }

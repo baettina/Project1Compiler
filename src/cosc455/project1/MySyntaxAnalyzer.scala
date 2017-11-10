@@ -30,8 +30,11 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
 
         if (Compiler.currentToken.equalsIgnoreCase(CONSTANTS.DOCE)){
           tstack.push(Compiler.currentToken)
-          if(Compiler.Scanner.position + 2 < Compiler.fileContents.length)
-            println("Error: Everything must be within the document block")
+            if(Compiler.Scanner.position + 2 < Compiler.fileContents.length){
+              println("Syntax error: Everything must be within the document block")
+              System.exit(1)
+            }
+
           else{
             println("WOO HOO!! proper syntax")
             Compiler.gittexTokens = tstack.toList.reverse
@@ -301,11 +304,18 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
       Compiler.Scanner.getNextToken()
 
       inneritem()
-      listItem()
+      tstack.push("\n")
+      if(Compiler.currentToken.equals(CONSTANTS.LISTITEM))
+        listItem()
     }
   }
 
   def inneritem(): Unit = {
+    if(isValidText(Compiler.currentToken)) {
+      tstack.push(Compiler.currentToken)
+      Compiler.Scanner.getNextToken()
+      //inneritem()
+    }
     if(Compiler.currentToken.equals(CONSTANTS.USEB)) {
       variableUse()
       inneritem()
@@ -317,11 +327,6 @@ class MySyntaxAnalyzer extends SyntaxAnalyzer {
     if(Compiler.currentToken.equals(CONSTANTS.LINKB.toString)) {
       link()
       inneritem()
-    }
-    if(isValidText(Compiler.currentToken)) {
-      tstack.push(Compiler.currentToken)
-      Compiler.Scanner.getNextToken()
-      //inneritem()
     }
 
   }
