@@ -2,7 +2,7 @@ package cosc455.project1
 
 import java.io.{File, PrintWriter}
 
-import scala.collection.mutable.{ListBuffer, Map}
+import scala.collection.mutable.{ListBuffer, Map, Stack}
 
 class MySemanticAnalyzer {
 
@@ -12,6 +12,7 @@ class MySemanticAnalyzer {
   var html = ListBuffer[String]()
   var gVars = Map[String, String]()
   var pVars = Map[String, String]()
+  var varStack = Stack[List[String]]()
   val htmlfile   = new PrintWriter(new File("index.html"))
 
   def getNextToken(): Unit = {
@@ -25,6 +26,8 @@ class MySemanticAnalyzer {
 
     html.foreach(x=>print(x))
     htmlfile.close()
+
+    new File("index.html").renameTo(new File(filename + ".html"))
   }
 
   def gittex(): Unit = {
@@ -177,7 +180,13 @@ class MySemanticAnalyzer {
           getNextToken()
 
           if(isValidText(token)) {
-            gVars += (varName -> token)
+
+            if(gVars.contains(varName)) {
+              pVars += (varName -> token)
+            }
+            else
+              gVars += (varName -> token)
+
             getNextToken()
 
             if(token.equals(CONSTANTS.BRACKETE.toString)) {
@@ -197,9 +206,20 @@ class MySemanticAnalyzer {
 
       // next token should be the variable name - check this in the semantic analyzer
       if(isValidText(token)) {
+        var key = token.toList.filter(!_.isWhitespace).mkString
+        /*
         if(gVars.contains(token.toList.filter(!_.isWhitespace).mkString)){
           html += gVars(token) + ' '
           htmlfile.write(gVars(token) + ' ')
+        }*/
+        if(pVars.contains(key)) {
+          html += pVars(key) + ' '
+          htmlfile.write(pVars(key) + ' ')
+          pVars -= key
+        }
+        else if(gVars.contains(key)) {
+          html += gVars(key) + ' '
+          htmlfile.write(gVars(key) + ' ')
         }
         else {
           println("Static semantic error: " + token + " has not been defined.")
