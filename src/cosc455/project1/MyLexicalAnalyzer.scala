@@ -3,21 +3,21 @@ package cosc455.project1
 import scala.collection.mutable.ListBuffer
 
 class MyLexicalAnalyzer extends LexicalAnalyzer {
-  var sourceLine : String = ""
-  var position : Int = 0
-  private var lexeme = new ListBuffer[Char]()
-  private var nextChar : Char = '\u0000'
-  private var lexLength : Int = 0
-  private var lexems : List[String] = List()
-  private val plaintext = (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9') ++ "," ++ "." ++ "\"" ++ ":" ++ "?" ++ "_" ++ "/").toSet
+  var         sourceLine : String = ""
+  var         position   : Int = 0
+  private var nextChar   : Char = '\u0000'
+  private var lexLength  : Int = 0
+  private var lexems     : List[String] = List("\\BEGIN", "\\begin", "\\END", "\\end", "\\TITLE[", "\\title", "]",
+                                               "#", "\\PARAB", "\\parab", "\\PARAE", "\\parae", "*", "+", "\\\\",
+                                               "[", "(", ")", "![", "\\DEF[", "\\def[", "=", "\\USE[", "\\use[")
+  private var lexeme     = new ListBuffer[Char]()
 
   /** start() is our initial call to our Lexical Analyzer
     *
-    * It initializes the certain variables used throughout the program
+    * It initializes the a list of legal tokens in our grammar
     * and gets the first character of our first token.
     */
   def start(line: String) = {
-    initializeLexems()
     sourceLine = line
     position = 0
     getChar()
@@ -29,7 +29,6 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
     * Checks to see if current position is still within the bounds of our input file
     * then takes the charAt(position) and increments position
     */
-  // gets the next character
   override def getChar(): Char = {
     if (position < sourceLine.length()) {
       nextChar = sourceLine.charAt(position)
@@ -41,9 +40,10 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
 
   /** getNextToken() builds a token and sets it to Compiler.currentToken
     *
-    * Initializes token length to 0 and looks at each char and appends it to a List, lexeme
-    * until a whitespace. This List is converted to a string which we verify using lookup().
-    * The contents of this List is cleared after.
+    * Builds the token char by char using the cases:
+    *   if char is whitespace -> gets next non-whitespace char
+    *   if char if a symbol   -> calls appropriate processing function then checks if its legal using lookup()
+    *   if char is text       -> processes text until a symbol
     */
   override def getNextToken(): Unit = {
     lexLength = 0
@@ -56,8 +56,7 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
       else {procSym()}
 
       // convert char list into string
-      var newToken : String = lexeme.mkString
-
+      val newToken : String = lexeme.mkString
       if(lookup(newToken)) {
         Compiler.currentToken = newToken
       }
@@ -67,17 +66,25 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
       Compiler.currentToken = lexeme.mkString
     }
     else {
-      println("Error: Can't get next token")
+      println("Lexical error: Can't get next token")
     }
     lexeme.clear()
   }
 
-
+  /** procSym() processes a symbol
+    *
+    * Creates a token of that symbol.
+    * Symbols processed by this method are solo symbols that shouldn't be tokenized with other chars
+    */
   def procSym(): Unit = {
     addChar()
     getChar()
   }
 
+  /** procText() processes text
+    *
+    * Creates a token composed of valid chars until a keyword is reached.
+    */
   def procText(): Unit = {
     while(!CONSTANTS.symbols.contains(nextChar) && nextChar != '\n')  {
       addChar()
@@ -85,6 +92,12 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
     }
   }
 
+  /** procAnno() processes annotations
+    *
+    * Annotations are tokens that begin with \ (document tags, title, paragraph tags, newline, variables)
+    * The token is composed of valid chars until a whitespace is reached or open bracket.
+    * Since title and variable tags end with an open bracket, the open bracket is also appended.
+    */
   def procAnno(): Unit = {
     if(nextChar == '\\'){
       addChar()
@@ -102,6 +115,11 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
     }
   }
 
+  /** procImg() processes image symbol
+    *
+    * Needed specifically for the beginning of an image keyword.
+    * This method creates a token that consists of two symbols.
+    */
   def procImg(): Unit = {
     if(nextChar == '!') {
       addChar()
@@ -126,26 +144,21 @@ class MyLexicalAnalyzer extends LexicalAnalyzer {
 
   /** lookup() check to see if found token is a valid token
     *
-    * First, it checks if the annotation or symbol is recognized.
-    * If not, it checks if contains illegal characters
-    * else, it declares that the candidate is an illegal annotation
+    * Checks to see if the candicate string is present in the list of legal tokens.
     */
   override def lookup(candidate: String): Boolean = {
     if(!lexems.contains(candidate)) {
-      println("LEXICAL ERROR - '" + candidate + "' is an illegal annotation.")
+      println("Lexical error: '" + candidate + "' is an illegal annotation.")
       System.exit(1)
       return false
     }
     return true
   }
 
-  def initializeLexems() = {
-    lexems = List("\\BEGIN", "\\begin", "\\END", "\\end", "\\TITLE[", "\\title", "]", "#", "\\PARAB", "\\parab", "\\PARAE", "\\parae", "*", "+", "\\\\",
-                  "[", "(", ")", "![", "\\DEF[", "\\def[", "=", "\\USE[", "\\use[")
-  }
-
+  /** getNonBlank() retrieves first non-whitespace character
+    *
+    * Repeatedly gets a new char until a non-whitespace char is found.
+    */
   def getNonBlank(): Unit = while(nextChar.isWhitespace) getChar()
-
-  def isPlaintext(candidate: String) = candidate.forall(plaintext.contains(_))
 
 }
