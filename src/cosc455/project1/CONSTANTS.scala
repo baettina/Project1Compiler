@@ -1,5 +1,8 @@
 package cosc455.project1
 
+/**
+  * Stores all valid lexemes in the gittex grammar
+  */
 object CONSTANTS {
   val DOCB       : String       = "\\BEGIN"
   val DOCE       : String       = "\\END"
@@ -25,6 +28,4 @@ object CONSTANTS {
   val numbersEtc : List[Char]   = List('1','2','3','4','5','6','7','8','9','0',',','.','\"',':','?','_','/', ''')
   val whiteSpace : List[Char]   = List(' ',  '\t', '\n', '\b','\f','\r')
   val validText  : List[Char]   = whiteSpace ::: letters ::: numbersEtc
-
-
 }

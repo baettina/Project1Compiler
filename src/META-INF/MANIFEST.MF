@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Main-Class: cosc455.project1.Compiler
+

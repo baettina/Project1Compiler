@@ -2,6 +2,9 @@ package cosc455.project1
 
 import scala.collection.mutable.ListBuffer
 
+/**
+  * Tokenizes given string according to valid gittex lexemes.
+  */
 class MyLexicalAnalyzer extends LexicalAnalyzer {
   var         sourceLine : String = ""
   var         position   : Int = 0

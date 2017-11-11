@@ -1,14 +1,16 @@
 package cosc455.project1
 
 import java.io.{File, PrintWriter}
+import scala.collection.mutable.Map
 
-import scala.collection.mutable.{ListBuffer, Map, Stack}
-
+/**
+  * Coverts gittex file to html
+  */
 class MySemanticAnalyzer {
 
   var token    : String = ""
   var position : Int    = 0
-  var html              = ListBuffer[String]()
+  //var html              = ListBuffer[String]()
   var gVars             = Map[String, String]()
   var pVars             = Map[String, String]()
   val htmlfile          = new PrintWriter(new File("index.html"))
@@ -43,7 +45,6 @@ class MySemanticAnalyzer {
     */
   def gittex(): Unit = {
     if (token.equalsIgnoreCase(CONSTANTS.DOCB)) {
-      html += "<html>\n"
       htmlfile.write("<html>\n")
       getNextToken()
 
@@ -56,7 +57,6 @@ class MySemanticAnalyzer {
         body()
 
         if (token.equalsIgnoreCase(CONSTANTS.DOCE)) {
-          html += "\n</html>"
           htmlfile.write("\n</html>")
         }
       }
@@ -70,17 +70,14 @@ class MySemanticAnalyzer {
     */
   def title(): Unit = {
     if(token.equalsIgnoreCase(CONSTANTS.TITLEB)) {
-      html += "<title>"
       htmlfile.write("<title>")
       getNextToken()
 
       if (isValidText(token)) {
-        html += token
         htmlfile.write(token)
         getNextToken()
 
         if (token.equals(CONSTANTS.BRACKETE.toString)) {
-          html += "</title>\n"
           htmlfile.write("</title>\n")
           getNextToken()
         }
@@ -141,7 +138,6 @@ class MySemanticAnalyzer {
       innertext()
     }
     if(isValidText(token)) {
-      html += token
       htmlfile.write(token)
       getNextToken()
       innertext()
@@ -155,7 +151,6 @@ class MySemanticAnalyzer {
     */
   def paragraph(): Unit = {
     if(token.equalsIgnoreCase(CONSTANTS.PARAB)) {
-      html += "<p>\n"
       htmlfile.write("<p>\n")
       getNextToken()
 
@@ -168,7 +163,6 @@ class MySemanticAnalyzer {
       }
 
       if(token.equals(CONSTANTS.PARAE)) {
-        html += "\n</p>\n"
         htmlfile.write("\n</p>\n")
         getNextToken()
       }
@@ -182,14 +176,11 @@ class MySemanticAnalyzer {
     */
   def heading(): Unit = {
     if(token.equals(CONSTANTS.HEADING.toString)) {
-      html += "<h1>"
       htmlfile.write("<h1>")
       getNextToken()
 
       if(isValidText(token)){
-        html += token.toList.filter(_ != '\n').mkString
         htmlfile.write(token.toList.filter(_ != '\n').mkString)
-        html += "</h1>\n"
         htmlfile.write("</h1>\n")
         getNextToken()
       }
@@ -250,12 +241,10 @@ class MySemanticAnalyzer {
         // Checks to see if the variable we want to use is within the 'local scope'
         // then checks to see if its in the 'global scope' and pulls the appropriate value
         if(pVars.contains(key)) {
-          html += pVars(key) + ' '
           htmlfile.write(pVars(key) + ' ')
           pVars -= key
         }
         else if(gVars.contains(key)) {
-          html += gVars(key) + ' '
           htmlfile.write(gVars(key) + ' ')
         }
         else {
@@ -278,17 +267,14 @@ class MySemanticAnalyzer {
     */
   def bold(): Unit = {
     if(token.equals(CONSTANTS.BOLD.toString)) {
-      html += "<b>"
       htmlfile.write("<b>")
       getNextToken()
 
       if(isValidText(token)) {
-        html += token
         htmlfile.write(token)
         getNextToken()
 
         if(token.equals(CONSTANTS.BOLD.toString)) {
-          html += "</b>"
           htmlfile.write("</b>")
           getNextToken()
         }
@@ -303,12 +289,10 @@ class MySemanticAnalyzer {
     */
   def listItem(): Unit = {
     if (token.equals(CONSTANTS.LISTITEM.toString)) {
-      html += "<li>"
       htmlfile.write("<li>")
       getNextToken()
 
       inneritem()
-      html += "</li>\n"
       htmlfile.write("</li>\n")
 
       if(token.equals(CONSTANTS.LISTITEM.toString))
@@ -323,7 +307,6 @@ class MySemanticAnalyzer {
     */
   def inneritem(): Unit = {
     if(isValidText(token)) {
-      html += token.toList.filter(_ != '\n').mkString
       htmlfile.write(token.toList.filter(_ != '\n').mkString)
       getNextToken()
     }
@@ -365,7 +348,6 @@ class MySemanticAnalyzer {
             getNextToken()
 
             if(isValidText(token)) {
-              html += "<a href=\"" + token + "\"> " + lname + " </a>"
               htmlfile.write("<a href=\"" + token + "\"> " + lname + " </a>")
               getNextToken()
 
@@ -400,7 +382,6 @@ class MySemanticAnalyzer {
             getNextToken()
 
             if(isValidText(token)) {
-              html += "<img src =\"" + token + "\" alt=\"" + lname + "\">"
               htmlfile.write("<img src =\"" + token + "\" alt=\"" + lname + "\">")
               getNextToken()
 
@@ -420,7 +401,6 @@ class MySemanticAnalyzer {
     */
   def newline(): Unit = {
     if(token.equals(CONSTANTS.NEWLINE.toString)){
-      html += "<br>\n"
       htmlfile.write("<br>\n")
       getNextToken()
     }

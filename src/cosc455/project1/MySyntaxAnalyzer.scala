@@ -2,6 +2,9 @@ package cosc455.project1
 
 import scala.collection.mutable.Stack
 
+/**
+  * Checks to see if file conforms to our grammar
+  */
 class MySyntaxAnalyzer extends SyntaxAnalyzer {
 
   var tstack = Stack[String]()
